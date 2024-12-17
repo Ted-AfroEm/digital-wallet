@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - '3001:3000'
+      - '3002:3000'
     environment:
       - DATABASE_URL=postgresql://pgadmin:1234@db:5432/digital_wallet
     depends_on:
