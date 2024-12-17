@@ -32,7 +32,7 @@ model Transaction {
   id            Int      @id @default(autoincrement())
   fromAccountId Int?
   toAccountId   Int?
-  type          TransactionType // Changed from String to Enum
+  type          String   // "DEPOSIT", "WITHDRAW", or "TRANSFER"
   amount        Float
   status        String   // "SUCCESS" or "FAILURE"
   createdAt     DateTime @default(now())
@@ -40,13 +40,7 @@ model Transaction {
   fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
   toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
 
-  @@index([fromAccountId]) // Add index for fromAccountId
-  @@index([toAccountId])   // Add index for toAccountId
-  @@index([type])          // Add index for transaction type
-}
-
-enum TransactionType {
-  DEPOSIT
-  WITHDRAW
-  TRANSFER
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([type])
 }
