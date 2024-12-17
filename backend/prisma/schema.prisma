@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -38,7 +32,7 @@ model Transaction {
   id            Int      @id @default(autoincrement())
   fromAccountId Int?
   toAccountId   Int?
-  type          String   // "DEPOSIT", "WITHDRAW", or "TRANSFER"
+  type          TransactionType // Changed from String to Enum
   amount        Float
   status        String   // "SUCCESS" or "FAILURE"
   createdAt     DateTime @default(now())
@@ -49,4 +43,10 @@ model Transaction {
   @@index([fromAccountId]) // Add index for fromAccountId
   @@index([toAccountId])   // Add index for toAccountId
   @@index([type])          // Add index for transaction type
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  TRANSFER
 }
