@@ -26,18 +26,21 @@ model Account {
   id          Int           @id @default(autoincrement())
   userId      Int
   balance     Float         @default(0.0)
-  transactions Transaction[]
+  transactionsFrom Transaction[] @relation("FromAccount")
+  transactionsTo   Transaction[] @relation("ToAccount")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Transaction {
   id          Int      @id @default(autoincrement())
-  accountId   Int
+  fromAccountId Int?
+  toAccountId   Int?
   type        String   // "DEPOSIT", "WITHDRAW", or "TRANSFER"
   amount      Float
   status      String   // "SUCCESS" or "FAILURE"
   createdAt   DateTime @default(now())
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
 }
