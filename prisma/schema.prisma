@@ -30,17 +30,23 @@ model Account {
   transactionsTo   Transaction[] @relation("ToAccount")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId]) // Add index for userId
 }
 
 model Transaction {
-  id          Int      @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   fromAccountId Int?
   toAccountId   Int?
-  type        String   // "DEPOSIT", "WITHDRAW", or "TRANSFER"
-  amount      Float
-  status      String   // "SUCCESS" or "FAILURE"
-  createdAt   DateTime @default(now())
+  type          String   // "DEPOSIT", "WITHDRAW", or "TRANSFER"
+  amount        Float
+  status        String   // "SUCCESS" or "FAILURE"
+  createdAt     DateTime @default(now())
 
   fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
   toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
+
+  @@index([fromAccountId]) // Add index for fromAccountId
+  @@index([toAccountId])   // Add index for toAccountId
+  @@index([type])          // Add index for transaction type
 }
