@@ -7,16 +7,26 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async register(data: { username: string; email: string; password: string }) {
-    const existingUser = await this.prisma.user.findUnique({
+    // Check if email already exists
+    const existingEmail = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
-
-    if (existingUser) {
+    if (existingEmail) {
       throw new BadRequestException('User with this email already exists');
     }
 
+    // Check if username already exists
+    const existingUsername = await this.prisma.user.findUnique({
+      where: { username: data.username },
+    });
+    if (existingUsername) {
+      throw new BadRequestException('Username is already taken');
+    }
+
+    // Hash the password
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
+    // Create the user
     return this.prisma.user.create({
       data: {
         username: data.username,
