@@ -1,10 +1,16 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
-import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { BadRequestException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 
 @ApiTags('Accounts')
+@ApiBearerAuth()
 @Controller('accounts')
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}

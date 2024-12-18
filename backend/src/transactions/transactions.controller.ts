@@ -1,5 +1,5 @@
 import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import {
   DepositDto,
@@ -8,6 +8,7 @@ import {
 } from './dto/create-transaction.dto';
 
 @ApiTags('Transactions')
+@ApiBearerAuth()
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
