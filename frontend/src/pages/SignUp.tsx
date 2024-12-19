@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../api/axios"; // Adjust path if necessary
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 const SignUp: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,10 +27,19 @@ const SignUp: React.FC = () => {
         email,
         password,
       });
-      toast.success(response.data.message || "Registration successful!");
-      navigate("/");
+
+      toast.success("Registration successful! Redirecting to dashboard...");
+
+      const user = response.data;
+      localStorage.setItem("user", JSON.stringify(user));
+      login(user);
+      // Redirect to dashboard
+      navigate("/dashboard");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to register.");
+      toast.error(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error as any)?.response?.data?.message || "Failed to register."
+      );
     } finally {
       setIsLoading(false);
     }

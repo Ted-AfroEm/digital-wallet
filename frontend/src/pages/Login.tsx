@@ -30,8 +30,8 @@ const Login: React.FC = () => {
         <h1 className="text-2xl font-bold mb-4">Login</h1>
         <form onSubmit={handleLogin}>
           <input
-            type="email"
-            placeholder="Email"
+            type="username"
+            placeholder="username"
             className="w-full p-2 mb-4 border rounded"
           />
           <input

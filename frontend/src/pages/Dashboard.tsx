@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import DataTable, { TableColumn } from "react-data-table-component";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 // import "react-toastify/dist/ReactToastify.css";
 
 interface Transaction {
@@ -100,7 +100,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="p-6">
-      <ToastContainer />
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Welcome, {user.username}!</h1>
       </header>
