@@ -11,6 +11,12 @@ async function bootstrap() {
   // Enable global validation
   app.useGlobalPipes(new ValidationPipe());
 
+  app.enableCors({
+    origin: 'http://localhost:5173', // Your frontend origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true, // If you're using cookies or authorization headers
+  });
+
   // Swagger setup
   const config = new DocumentBuilder()
     .setTitle('Digital Wallet API')
