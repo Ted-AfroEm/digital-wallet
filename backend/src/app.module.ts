@@ -7,9 +7,10 @@ import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 // import { AuthModule } from './auth/auth.module';
 // import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [UsersModule, AccountsModule, TransactionsModule],
+  imports: [UsersModule, AccountsModule, TransactionsModule, AuthModule],
   controllers: [AppController],
   providers: [
     AppService,

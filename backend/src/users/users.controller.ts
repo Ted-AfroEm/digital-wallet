@@ -31,9 +31,9 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a user by ID' })
-  async findOne(@Param('id') id: string) {
-    return this.usersService.findOne(Number(id));
+  @Get(':username')
+  @ApiOperation({ summary: 'Get a user by username' })
+  async findOne(@Param('username') username: string) {
+    return this.usersService.findOne(username);
   }
 }
