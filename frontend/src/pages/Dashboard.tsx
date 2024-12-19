@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import DataTable, { TableColumn } from "react-data-table-component";
+import { ToastContainer, toast } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 
 interface Transaction {
   date: string;
@@ -32,6 +34,9 @@ const Dashboard: React.FC = () => {
     if (depositAmount > 0) {
       deposit(depositAmount);
       setDepositAmount(0);
+      toast.success("Deposit successful!");
+    } else {
+      toast.error("Enter a valid deposit amount.");
     }
   };
 
@@ -39,6 +44,9 @@ const Dashboard: React.FC = () => {
     if (withdrawAmount > 0) {
       withdraw(withdrawAmount);
       setWithdrawAmount(0);
+      toast.success("Withdrawal successful!");
+    } else {
+      toast.error("Enter a valid withdrawal amount.");
     }
   };
 
@@ -47,6 +55,9 @@ const Dashboard: React.FC = () => {
       transfer(recipient, transferAmount);
       setRecipient("");
       setTransferAmount(0);
+      toast.success("Transfer successful!");
+    } else {
+      toast.error("Enter valid transfer details.");
     }
   };
 
@@ -89,6 +100,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="p-6">
+      <ToastContainer />
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Welcome, {user.username}!</h1>
       </header>
