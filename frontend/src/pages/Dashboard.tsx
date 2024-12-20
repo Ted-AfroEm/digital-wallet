@@ -149,7 +149,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 pt-10">
+    <div className="flex justify-center min-h-screen bg-gray-50 pt-10">
       <div className="w-full max-w-4xl p-6 bg-white rounded-lg shadow-lg">
         <header className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Welcome, {user.username}!</h1>
@@ -170,7 +170,7 @@ const Dashboard: React.FC = () => {
                   onClick={() => switchAccount(account.id)}
                   className={`p-2 rounded ${
                     account.id === currentAccount.id
-                      ? "bg-blue-500 text-white"
+                      ? "bg-gray-500 text-white"
                       : "bg-gray-200 text-gray-800"
                   }`}
                 >
@@ -199,7 +199,7 @@ const Dashboard: React.FC = () => {
           <h2 className="text-xl font-bold mb-4">Current Account Balance</h2>
           <p className="text-lg">${currentAccount.balance.toFixed(2)}</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 md:py-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 md:py-4 items-start">
           <div className="p-4 bg-gray-100 rounded shadow">
             <h2 className="text-xl font-bold mb-4">Deposit</h2>
             <input
@@ -211,7 +211,7 @@ const Dashboard: React.FC = () => {
             />
             <button
               onClick={handleDeposit}
-              className="w-full p-2 bg-blue-500 text-white rounded"
+              className="w-full p-2 bg-gray-500 text-white rounded"
             >
               Deposit
             </button>
@@ -227,7 +227,7 @@ const Dashboard: React.FC = () => {
             />
             <button
               onClick={handleWithdrawal}
-              className="w-full p-2 bg-green-500 text-white rounded"
+              className="w-full p-2 bg-gray-500 text-white rounded"
             >
               Withdraw
             </button>
@@ -260,7 +260,7 @@ const Dashboard: React.FC = () => {
             />
             <button
               onClick={handleTransfer}
-              className="w-full p-2 bg-purple-500 text-white rounded"
+              className="w-full p-2 bg-gray-500 text-white rounded"
             >
               Transfer
             </button>
