@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  // Param,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 
@@ -6,7 +14,9 @@ import { UsersService } from './users.service';
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {
+    console.log('UsersController initialized');
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -31,9 +41,19 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a user by ID' })
-  async findOne(@Param('id') id: string) {
-    return this.usersService.findOne(Number(id));
+  // @Get(':username')
+  // @ApiOperation({ summary: 'Get a user by username' })
+  // async findOne(@Param('username') username: string) {
+  //   return this.usersService.findOne(username);
+  // }
+
+  @Post('me')
+  async getUserInfo(@Req() req: Request) {
+    const userId = (req as any).user?.sub;
+    if (!userId) {
+      throw new UnauthorizedException('User ID is missing');
+    }
+    const userInfo = await this.usersService.getUserInfo(userId);
+    return userInfo;
   }
 }

@@ -37,18 +37,48 @@ export class UsersService {
   }
 
   async findAll() {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({
+      select: {
+        username: true,
+        email: true,
+        createdAt: true,
+      },
+    });
   }
 
-  async findOne(id: number) {
+  async findOne(username: string) {
     return this.prisma.user.findUnique({
-      where: { id },
+      where: { username },
     });
   }
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
+      select: {
+        username: true,
+        email: true,
+        createdAt: true,
+      },
     });
+  }
+
+  async getUserInfo(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+        accounts: {
+          select: {
+            id: true,
+            balance: true,
+          },
+        },
+      },
+    });
+    return user;
   }
 }

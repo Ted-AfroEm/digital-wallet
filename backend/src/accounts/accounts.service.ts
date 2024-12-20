@@ -6,14 +6,6 @@ export class AccountsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: { userId: number; initialBalance: number }) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: data.userId },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
     return this.prisma.account.create({
       data: {
         userId: data.userId,
@@ -22,26 +14,44 @@ export class AccountsService {
     });
   }
 
-  async findAll() {
+  async findAllByUserId(userId: number) {
     return this.prisma.account.findMany({
+      where: { userId },
       include: {
-        // Include user details in the response if needed
-        user: true,
+        user: {
+          select: {
+            username: true,
+            email: true,
+            createdAt: true,
+          },
+        },
       },
     });
   }
 
-  async findOne(id: number) {
+  async findAllAccounts() {
+    return this.prisma.account.findMany({
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findOneByUserId(userId: number, accountId: number) {
     const account = await this.prisma.account.findUnique({
-      where: { id },
+      where: { id: accountId },
       include: {
         transactionsFrom: true,
         transactionsTo: true,
       },
     });
 
-    if (!account) {
-      throw new BadRequestException(`Account with ID ${id} not found`);
+    if (!account || account.userId !== userId) {
+      throw new BadRequestException('Access denied or account not found');
     }
 
     return account;
