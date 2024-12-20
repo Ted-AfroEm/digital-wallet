@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Param,
+  // Param,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -41,11 +41,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get(':username')
-  @ApiOperation({ summary: 'Get a user by username' })
-  async findOne(@Param('username') username: string) {
-    return this.usersService.findOne(username);
-  }
+  // @Get(':username')
+  // @ApiOperation({ summary: 'Get a user by username' })
+  // async findOne(@Param('username') username: string) {
+  //   return this.usersService.findOne(username);
+  // }
 
   @Post('me')
   async getUserInfo(@Req() req: Request) {
