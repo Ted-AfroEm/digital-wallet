@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { toast } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
 
 interface Transaction {
   date: string;
@@ -14,7 +13,7 @@ interface Transaction {
 }
 
 const Dashboard: React.FC = () => {
-  const { user, deposit, withdraw, transfer, transactions } = useAuth();
+  const { user, deposit, withdraw, transfer, transactions, logout } = useAuth();
   const navigate = useNavigate();
   const [depositAmount, setDepositAmount] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
@@ -61,6 +60,12 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    toast.success("Logged out successfully!");
+    navigate("/");
+  };
+
   const columns: TableColumn<Transaction>[] = [
     {
       name: "Date",
@@ -102,6 +107,12 @@ const Dashboard: React.FC = () => {
     <div className="p-6">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Welcome, {user.username}!</h1>
+        <button
+          onClick={handleLogout}
+          className="p-2 px-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-transform transform hover:scale-105"
+        >
+          Logout
+        </button>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-4 bg-gray-100 rounded shadow">
