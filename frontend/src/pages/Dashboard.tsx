@@ -199,7 +199,8 @@ const Dashboard: React.FC = () => {
           <h2 className="text-xl font-bold mb-4">Current Account Balance</h2>
           <p className="text-lg">${currentAccount.balance.toFixed(2)}</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 md:py-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 py-4">
+          {/* Deposit Section */}
           <div className="p-4 bg-gray-100 rounded shadow">
             <h2 className="text-xl font-bold mb-4">Deposit</h2>
             <input
@@ -211,11 +212,13 @@ const Dashboard: React.FC = () => {
             />
             <button
               onClick={handleDeposit}
-              className="w-full p-2 bg-gray-500 text-white rounded"
+              className="w-full mt-2 p-2 bg-gray-500 text-white rounded"
             >
               Deposit
             </button>
           </div>
+
+          {/* Withdraw Section */}
           <div className="p-4 bg-gray-100 rounded shadow">
             <h2 className="text-xl font-bold mb-4">Withdraw</h2>
             <input
@@ -227,40 +230,46 @@ const Dashboard: React.FC = () => {
             />
             <button
               onClick={handleWithdrawal}
-              className="w-full p-2 bg-gray-500 text-white rounded"
+              className="w-full mt-2 p-2 bg-gray-500 text-white rounded"
             >
               Withdraw
             </button>
           </div>
-          <div className="p-4 bg-gray-100 rounded shadow">
-            <h2 className="text-xl font-bold mb-4">Transfer</h2>
-            <select
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-              className="w-full p-2 border rounded mb-2"
-            >
-              <option value="" disabled>
-                Select Recipient
-              </option>
-              {allAccounts
-                .filter((account) => account.id !== Number(currentAccount?.id))
-                .map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.user.username} - Account #{account.id}
-                  </option>
-                ))}
-            </select>
 
-            <input
-              type="number"
-              value={transferAmount}
-              onChange={(e) => setTransferAmount(Number(e.target.value))}
-              className="w-full p-2 border rounded mb-2"
-              placeholder="Amount"
-            />
+          {/* Transfer Section */}
+          <div className="p-4 bg-gray-100 rounded shadow md:col-span-2 ">
+            <h2 className="text-xl font-bold mb-4">Transfer</h2>
+            <div className="flex flex-col lg:flex-row gap-4">
+              <select
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                className="w-full lg:w-1/2 p-2 border rounded"
+              >
+                <option value="" disabled>
+                  Select Recipient
+                </option>
+                {allAccounts
+                  .filter(
+                    (account) => account.id !== Number(currentAccount?.id)
+                  )
+                  .map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.user.username} - Account #{account.id}
+                    </option>
+                  ))}
+              </select>
+
+              <input
+                type="number"
+                value={transferAmount}
+                onChange={(e) => setTransferAmount(Number(e.target.value))}
+                className="w-full lg:w-1/2 p-2 border rounded"
+                placeholder="Amount"
+              />
+            </div>
             <button
               onClick={handleTransfer}
-              className="w-full p-2 bg-gray-500 text-white rounded"
+              className="w-full mt-4 p-2 bg-gray-500 text-white rounded"
             >
               Transfer
             </button>
