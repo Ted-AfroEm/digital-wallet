@@ -1,12 +1,12 @@
 import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../api/axios";
-import { useAuth } from "../context/AuthContext";
 
 const SignUp: React.FC = () => {
-  const navigate = useNavigate();
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,24 +22,23 @@ const SignUp: React.FC = () => {
 
     try {
       setIsLoading(true);
+      // Call the registration endpoint
       const response = await api.post("/users/register", {
         username,
         email,
         password,
       });
 
-      toast.success("Registration successful! Redirecting to dashboard...");
-
-      const user = response.data;
-      localStorage.setItem("user", JSON.stringify(user));
-      login(user);
-      // Redirect to dashboard
-      navigate("/dashboard");
-    } catch (error) {
-      toast.error(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (error as any)?.response?.data?.message || "Failed to register."
-      );
+      if (response.status === 201) {
+        toast.success("Registration successful! Logging in...");
+        await login(username, password);
+        navigate("/dashboard");
+      } else {
+        throw new Error("Unexpected response status");
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to register.");
     } finally {
       setIsLoading(false);
     }

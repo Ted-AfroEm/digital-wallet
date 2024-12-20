@@ -33,6 +33,12 @@ export class UsersService {
         email: data.email,
         password: hashedPassword,
       },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+      },
     });
   }
 
