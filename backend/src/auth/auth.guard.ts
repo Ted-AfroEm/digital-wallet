@@ -28,7 +28,12 @@ export class AuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
+    console.log(
+      'AuthGuard invoked. Request Headers:',
+      JSON.stringify(request.headers),
+    );
     const token = this.extractTokenFromHeader(request);
+    console.log('Extracted Token:', token);
 
     if (request.url.includes('/users/register')) {
       return true;
@@ -43,8 +48,11 @@ export class AuthGuard implements CanActivate {
       });
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
+      console.log('Decoded Payload:', payload);
       request['user'] = payload;
-    } catch {
+      console.log('Request after attaching user:', request.user);
+    } catch (err) {
+      console.error('JWT verification failed:', err);
       throw new UnauthorizedException();
     }
     return true;
