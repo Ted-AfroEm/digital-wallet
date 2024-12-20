@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsPositive } from 'class-validator';
+import { IsInt, IsPositive, IsOptional } from 'class-validator';
 
 export class CreateAccountDto {
   @ApiProperty({
@@ -8,6 +8,7 @@ export class CreateAccountDto {
   })
   @IsInt()
   @IsPositive()
+  @IsOptional()
   userId: number;
 
   @ApiProperty({
