@@ -1,11 +1,17 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
 import api from "../api/axios"; // Adjust path if necessary
+import { toast } from "react-toastify";
+
+interface Account {
+  id: string;
+  balance: number;
+}
 
 interface User {
   id: string;
   username: string;
   email: string;
-  balance: number;
+  accounts: Account[];
 }
 
 interface Transaction {
@@ -18,11 +24,14 @@ interface Transaction {
 }
 interface AuthContextProps {
   user: User | null;
+  currentAccount: Account | null;
+  switchAccount: (accountId: string) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  deposit: (amount: number) => void;
+  deposit: (amount: number) => Promise<void>;
   withdraw: (amount: number) => void;
   transfer: (recipient: string, amount: number) => void;
+  addAccount: (initialBalance: number) => Promise<void>;
   transactions: Transaction[];
 }
 
@@ -32,21 +41,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const login = async (username: string, password: string) => {
     try {
-      // Call login endpoint to get access token
       const loginResponse = await api.post("/auth/login", {
         username,
         password,
       });
       const { access_token } = loginResponse.data;
 
-      // Store the token
       localStorage.setItem("token", access_token);
 
-      // Call /users/me to get user information
       const userResponse = await api.post(
         "/users/me",
         {},
@@ -58,14 +65,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       );
 
       const userData = userResponse.data;
-      const balance = userData.accounts?.[0]?.balance || 0;
-
       setUser({
         id: userData.id,
         username: userData.username,
         email: userData.email,
-        balance,
+        accounts: userData.accounts,
       });
+
+      setCurrentAccount(userData.accounts?.[0] || null);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Login failed");
@@ -75,49 +82,167 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    setCurrentAccount(null);
+  };
+
+  const switchAccount = (accountId: string) => {
+    if (user) {
+      const account = user.accounts.find((acc) => acc.id === accountId);
+      if (account) {
+        setCurrentAccount(account);
+      }
+    }
+  };
+
+  const addAccount = async (initialBalance: number) => {
+    try {
+      const response = await api.post(
+        "/accounts",
+        { initialBalance },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const newAccount = response.data;
+
+      if (user) {
+        const updatedAccounts = [...user.accounts, newAccount];
+        setUser({ ...user, accounts: updatedAccounts });
+        setCurrentAccount(newAccount);
+      }
+
+      toast.success("Account added successfully!");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to add account.");
+    }
   };
 
   const addTransaction = (transaction: Transaction) => {
     setTransactions((prev) => [transaction, ...prev]);
   };
 
-  const deposit = (amount: number) => {
-    if (user) {
-      setUser({ ...user, balance: user.balance + amount });
-      addTransaction({
-        id: crypto.randomUUID(),
-        date: new Date().toLocaleString(),
-        type: "Deposit",
-        amount,
-        status: "Success",
-      });
+  const deposit = async (amount: number) => {
+    if (!currentAccount) {
+      toast.error("No account selected.");
+      return;
+    }
+
+    try {
+      const response = await api.post(
+        `/transactions/deposit`,
+        { amount, accountId: currentAccount.id },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.status === 201) {
+        const newBalance = response.data.amount + currentAccount.balance;
+
+        if (currentAccount) {
+          setCurrentAccount({
+            ...currentAccount,
+            balance: newBalance,
+          });
+        }
+
+        // Update the user accounts in the context
+        if (user) {
+          const updatedAccounts = user.accounts.map((acc) =>
+            acc.id === currentAccount.id ? { ...acc, balance: newBalance } : acc
+          );
+          setUser({ ...user, accounts: updatedAccounts });
+        }
+
+        toast.success("Deposit successful!");
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Deposit failed.");
     }
   };
 
-  const withdraw = (amount: number) => {
-    if (user && user.balance >= amount) {
-      setUser({ ...user, balance: user.balance - amount });
-      addTransaction({
-        id: crypto.randomUUID(),
-        date: new Date().toLocaleString(),
-        type: "Withdrawal",
-        amount,
-        status: "Success",
-      });
-    } else {
-      addTransaction({
-        id: crypto.randomUUID(),
-        date: new Date().toLocaleString(),
-        type: "Withdrawal",
-        amount,
-        status: "Failure",
-      });
+  const withdraw = async (amount: number) => {
+    try {
+      if (currentAccount && currentAccount.balance >= amount) {
+        const response = await api.post(
+          `/transactions/withdraw`,
+          // { amount, accountId: currentAccount.id },
+          { accountId: currentAccount.id },
+
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (response.status === 201) {
+          const newBalance = currentAccount.balance - response.data.amount;
+
+          if (currentAccount) {
+            setCurrentAccount({
+              ...currentAccount,
+              balance: newBalance,
+            });
+          }
+          if (user) {
+            const updatedAccounts = user.accounts.map((acc) =>
+              acc.id === currentAccount.id
+                ? { ...acc, balance: newBalance }
+                : acc
+            );
+            setUser({ ...user, accounts: updatedAccounts });
+          }
+
+          toast.success("Withdrawal successful!");
+        } else {
+          console.log(response.data);
+          toast.error(response?.data?.message || "Withdrawal failed.");
+        }
+
+        // addTransaction({
+        //   id: crypto.randomUUID(),
+        //   date: new Date().toLocaleString(),
+        //   type: "Withdrawal",
+        //   amount,
+        //   status: "Success",
+        // });
+      } else {
+        // addTransaction({
+        //   id: crypto.randomUUID(),
+        //   date: new Date().toLocaleString(),
+        //   type: "Withdrawal",
+        //   amount,
+        //   status: "Failure",
+        // });
+        toast.error("Insufficient balance.");
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Withdrawal failed.");
     }
   };
 
   const transfer = (recipient: string, amount: number) => {
-    if (user && user.balance >= amount) {
-      setUser({ ...user, balance: user.balance - amount });
+    if (currentAccount && currentAccount.balance >= amount) {
+      const newBalance = currentAccount.balance - amount;
+
+      setCurrentAccount({ ...currentAccount, balance: newBalance });
+
+      if (user) {
+        const updatedAccounts = user.accounts.map((acc) =>
+          acc.id === currentAccount.id ? { ...acc, balance: newBalance } : acc
+        );
+        setUser({ ...user, accounts: updatedAccounts });
+      }
+
       addTransaction({
         id: crypto.randomUUID(),
         date: new Date().toLocaleString(),
@@ -126,6 +251,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         status: "Success",
         recipient,
       });
+
+      toast.success("Transfer successful!");
     } else {
       addTransaction({
         id: crypto.randomUUID(),
@@ -135,12 +262,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         status: "Failure",
         recipient,
       });
+      toast.error("Insufficient balance.");
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, deposit, withdraw, transfer, transactions }}
+      value={{
+        user,
+        currentAccount,
+        switchAccount,
+        login,
+        logout,
+        deposit,
+        withdraw,
+        transfer,
+        addAccount,
+        transactions,
+      }}
     >
       {children}
     </AuthContext.Provider>
