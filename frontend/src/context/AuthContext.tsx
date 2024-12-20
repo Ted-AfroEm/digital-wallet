@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
 import api from "../api/axios"; // Adjust path if necessary
 import { toast } from "react-toastify";
 
@@ -15,12 +21,13 @@ interface User {
 }
 
 interface Transaction {
-  id: string;
-  date: string;
-  type: "Deposit" | "Withdrawal" | "Transfer";
+  id: number;
+  fromAccountId: number;
+  toAccountId: number;
+  type: "TRANSFER" | "DEPOSIT" | "WITHDRAWAL";
   amount: number;
-  status: "Success" | "Failure";
-  recipient?: string;
+  status: "SUCCESS" | "FAILURE";
+  createdAt: string;
 }
 interface AuthContextProps {
   user: User | null;
@@ -125,10 +132,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const addTransaction = (transaction: Transaction) => {
-    setTransactions((prev) => [transaction, ...prev]);
-  };
-
   const deposit = async (amount: number) => {
     if (!currentAccount) {
       toast.error("No account selected.");
@@ -165,6 +168,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         }
 
         toast.success("Deposit successful!");
+        fetchTransactions(currentAccount.id);
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -177,9 +181,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       if (currentAccount && currentAccount.balance >= amount) {
         const response = await api.post(
           `/transactions/withdraw`,
-          // { amount, accountId: currentAccount.id },
-          { accountId: currentAccount.id },
-
+          { amount, accountId: currentAccount.id },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -206,13 +208,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           }
 
           toast.success("Withdrawal successful!");
-          // addTransaction({
-          //   id: crypto.randomUUID(),
-          //   date: new Date().toLocaleString(),
-          //   type: "Withdrawal",
-          //   amount,
-          //   status: "Success",
-          // });
+          fetchTransactions(currentAccount.id);
         } else {
           console.log(response.data);
           toast.error(response?.data?.message || "Withdrawal failed.");
@@ -259,13 +255,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
             setUser({ ...user, accounts: updatedAccounts });
           }
           toast.success("Transfer successful!");
+          fetchTransactions(currentAccount.id);
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Transfer failed.");
       }
+    } else {
+      toast.error("Insufficient funds.");
     }
   };
+
+  const fetchTransactions = async (accountId: string) => {
+    try {
+      const response = await api.get(`/transactions/history/${accountId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setTransactions(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to fetch transactions."
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (currentAccount) {
+      fetchTransactions(currentAccount.id);
+    }
+  }, [currentAccount]);
 
   return (
     <AuthContext.Provider
