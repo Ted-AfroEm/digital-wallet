@@ -84,18 +84,20 @@ export class TransactionsService {
       where: { id: toAccountId },
     });
 
-    if (
-      !fromAccount ||
-      fromAccount.userId !== userId ||
-      fromAccount.balance < amount
-    ) {
-      throw new BadRequestException(
-        'Access denied, insufficient funds, or invalid source account',
-      );
+    if (!fromAccount || fromAccount.userId !== userId) {
+      throw new BadRequestException('Invalid or unauthorized source account');
     }
 
     if (!toAccount) {
       throw new BadRequestException('Invalid destination account');
+    }
+
+    if (fromAccountId === toAccountId) {
+      throw new BadRequestException('Cannot transfer to the same account');
+    }
+
+    if (fromAccount.balance < amount) {
+      throw new BadRequestException('Insufficient funds in source account');
     }
 
     return this.prisma.$transaction(async (prisma) => {
