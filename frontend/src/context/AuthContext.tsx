@@ -30,7 +30,11 @@ interface AuthContextProps {
   logout: () => void;
   deposit: (amount: number) => Promise<void>;
   withdraw: (amount: number) => void;
-  transfer: (recipient: string, amount: number) => void;
+  transfer: (
+    recipientId: string,
+    amount: number,
+    senderAccountId: string
+  ) => void;
   addAccount: (initialBalance: number) => Promise<void>;
   transactions: Transaction[];
 }
@@ -202,26 +206,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           }
 
           toast.success("Withdrawal successful!");
+          // addTransaction({
+          //   id: crypto.randomUUID(),
+          //   date: new Date().toLocaleString(),
+          //   type: "Withdrawal",
+          //   amount,
+          //   status: "Success",
+          // });
         } else {
           console.log(response.data);
           toast.error(response?.data?.message || "Withdrawal failed.");
         }
-
-        // addTransaction({
-        //   id: crypto.randomUUID(),
-        //   date: new Date().toLocaleString(),
-        //   type: "Withdrawal",
-        //   amount,
-        //   status: "Success",
-        // });
       } else {
-        // addTransaction({
-        //   id: crypto.randomUUID(),
-        //   date: new Date().toLocaleString(),
-        //   type: "Withdrawal",
-        //   amount,
-        //   status: "Failure",
-        // });
         toast.error("Insufficient balance.");
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -230,39 +226,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const transfer = (recipient: string, amount: number) => {
+  const transfer = async (
+    recipientId: string,
+    amount: number,
+    senderAccountId: string
+  ) => {
     if (currentAccount && currentAccount.balance >= amount) {
-      const newBalance = currentAccount.balance - amount;
-
-      setCurrentAccount({ ...currentAccount, balance: newBalance });
-
-      if (user) {
-        const updatedAccounts = user.accounts.map((acc) =>
-          acc.id === currentAccount.id ? { ...acc, balance: newBalance } : acc
+      try {
+        const response = await api.post(
+          "/transactions/transfer",
+          {
+            fromAccountId: senderAccountId,
+            toAccountId: Number(recipientId),
+            amount: amount,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
         );
-        setUser({ ...user, accounts: updatedAccounts });
+
+        if (response.status === 201) {
+          const newBalance = currentAccount.balance - amount;
+          setCurrentAccount({ ...currentAccount, balance: newBalance });
+          if (user) {
+            const updatedAccounts = user.accounts.map((acc) =>
+              acc.id === currentAccount.id
+                ? { ...acc, balance: newBalance }
+                : acc
+            );
+            setUser({ ...user, accounts: updatedAccounts });
+          }
+          toast.success("Transfer successful!");
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Transfer failed.");
       }
-
-      addTransaction({
-        id: crypto.randomUUID(),
-        date: new Date().toLocaleString(),
-        type: "Transfer",
-        amount,
-        status: "Success",
-        recipient,
-      });
-
-      toast.success("Transfer successful!");
-    } else {
-      addTransaction({
-        id: crypto.randomUUID(),
-        date: new Date().toLocaleString(),
-        type: "Transfer",
-        amount,
-        status: "Failure",
-        recipient,
-      });
-      toast.error("Insufficient balance.");
     }
   };
 

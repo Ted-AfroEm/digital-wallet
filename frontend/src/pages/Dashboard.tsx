@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { toast } from "react-toastify";
+import api from "../api/axios";
 
 interface Transaction {
   date: string;
@@ -10,6 +11,14 @@ interface Transaction {
   amount: number;
   status: string;
   recipient?: string;
+}
+interface AccountDetails {
+  id: number;
+  userId: number;
+  balance: number;
+  user: {
+    username: string;
+  };
 }
 
 const Dashboard: React.FC = () => {
@@ -29,8 +38,26 @@ const Dashboard: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [recipient, setRecipient] = useState("");
   const [transferAmount, setTransferAmount] = useState(0);
+  const [allAccounts, setAllAccounts] = useState<AccountDetails[]>([]);
 
   const [initialBalance, setInitialBalance] = useState<number | "">("");
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await api.get("/accounts/all", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        setAllAccounts(response.data);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        toast.error("Failed to fetch accounts.");
+      }
+    };
+    fetchAccounts();
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -58,9 +85,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (transferAmount > 0 && recipient) {
-      transfer(recipient, transferAmount);
+      transfer(recipient, transferAmount, currentAccount.id);
       setRecipient("");
       setTransferAmount(0);
     } else {
@@ -113,6 +140,9 @@ const Dashboard: React.FC = () => {
       sortable: true,
     },
   ];
+  if (!user || !currentAccount) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="p-6">
@@ -198,13 +228,23 @@ const Dashboard: React.FC = () => {
       </div>
       <div className="p-4 bg-gray-100 rounded shadow mt-6">
         <h2 className="text-xl font-bold mb-4">Transfer</h2>
-        <input
-          type="text"
+        <select
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
           className="w-full p-2 border rounded mb-2"
-          placeholder="Recipient Username"
-        />
+        >
+          <option value="" disabled>
+            Select Recipient
+          </option>
+          {allAccounts
+            .filter((account) => account.id !== Number(currentAccount?.id))
+            .map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.user.username} - Account #{account.id}
+              </option>
+            ))}
+        </select>
+
         <input
           type="number"
           value={transferAmount}
