@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
+import api from "../api/axios"; // Adjust path if necessary
 
 interface User {
   id: string;
@@ -17,7 +18,7 @@ interface Transaction {
 }
 interface AuthContextProps {
   user: User | null;
-  login: (userData: User) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   deposit: (amount: number) => void;
   withdraw: (amount: number) => void;
@@ -33,8 +34,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const login = (userData: User) => setUser(userData);
-  const logout = () => setUser(null);
+  const login = async (username: string, password: string) => {
+    try {
+      // Call login endpoint to get access token
+      const loginResponse = await api.post("/auth/login", {
+        username,
+        password,
+      });
+      const { access_token } = loginResponse.data;
+
+      // Store the token
+      localStorage.setItem("token", access_token);
+
+      // Call /users/me to get user information
+      const userResponse = await api.post(
+        "/users/me",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      const userData = userResponse.data;
+      const balance = userData.accounts?.[0]?.balance || 0;
+
+      setUser({
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        balance,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Login failed");
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+  };
 
   const addTransaction = (transaction: Transaction) => {
     setTransactions((prev) => [transaction, ...prev]);
