@@ -5,9 +5,16 @@ import { PrismaService } from '../common/prisma.service';
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async deposit(accountId: number, amount: number) {
+  async deposit(userId: number, accountId: number, amount: number) {
     if (amount <= 0) {
       throw new BadRequestException('Deposit amount must be greater than zero');
+    }
+
+    const account = await this.prisma.account.findUnique({
+      where: { id: accountId },
+    });
+    if (!account || account.userId !== userId) {
+      throw new BadRequestException('Access denied or account not found');
     }
 
     return this.prisma.$transaction(async (prisma) => {
@@ -27,19 +34,18 @@ export class TransactionsService {
     });
   }
 
-  async withdraw(accountId: number, amount: number) {
-    if (amount <= 0) {
-      throw new BadRequestException(
-        'Withdrawal amount must be greater than zero',
-      );
-    }
-
+  async withdraw(userId: number, accountId: number, amount: number) {
     const account = await this.prisma.account.findUnique({
       where: { id: accountId },
     });
 
-    if (!account || account.balance < amount) {
-      throw new BadRequestException('Insufficient funds');
+    if (!account || account.userId !== userId || account.balance < amount) {
+      throw new BadRequestException('Insufficient funds or access denied');
+    }
+    if (amount <= 0) {
+      throw new BadRequestException(
+        'Withdrawal amount must be greater than zero',
+      );
     }
 
     return this.prisma.$transaction(async (prisma) => {
@@ -59,7 +65,12 @@ export class TransactionsService {
     });
   }
 
-  async transfer(fromAccountId: number, toAccountId: number, amount: number) {
+  async transfer(
+    userId: number,
+    fromAccountId: number,
+    toAccountId: number,
+    amount: number,
+  ) {
     if (amount <= 0) {
       throw new BadRequestException(
         'Transfer amount must be greater than zero',
@@ -73,12 +84,18 @@ export class TransactionsService {
       where: { id: toAccountId },
     });
 
-    if (!fromAccount || !toAccount) {
-      throw new BadRequestException('Invalid accounts provided');
+    if (
+      !fromAccount ||
+      fromAccount.userId !== userId ||
+      fromAccount.balance < amount
+    ) {
+      throw new BadRequestException(
+        'Access denied, insufficient funds, or invalid source account',
+      );
     }
 
-    if (fromAccount.balance < amount) {
-      throw new BadRequestException('Insufficient funds in source account');
+    if (!toAccount) {
+      throw new BadRequestException('Invalid destination account');
     }
 
     return this.prisma.$transaction(async (prisma) => {
@@ -104,7 +121,19 @@ export class TransactionsService {
     });
   }
 
-  async getTransactionHistory(accountId: number, type?: string) {
+  async getTransactionHistory(
+    userId: number,
+    accountId: number,
+    type?: string,
+  ) {
+    const account = await this.prisma.account.findUnique({
+      where: { id: accountId },
+    });
+
+    if (!account || account.userId !== userId) {
+      throw new BadRequestException('Access denied or account not found');
+    }
+
     return this.prisma.transaction.findMany({
       where: {
         OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],

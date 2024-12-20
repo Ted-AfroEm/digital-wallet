@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import {
@@ -6,6 +14,7 @@ import {
   WithdrawDto,
   TransferDto,
 } from './dto/create-transaction.dto';
+import { CurrentUser } from '../users/current-user.decorator';
 
 @ApiTags('Transactions')
 @ApiBearerAuth()
@@ -15,20 +24,29 @@ export class TransactionsController {
 
   @Post('deposit')
   @ApiOperation({ summary: 'Deposit money into an account' })
-  async deposit(@Body() data: DepositDto) {
-    return this.transactionsService.deposit(data.accountId, data.amount);
+  async deposit(@CurrentUser() user, @Body() data: DepositDto) {
+    return this.transactionsService.deposit(
+      user.sub,
+      data.accountId,
+      data.amount,
+    );
   }
 
   @Post('withdraw')
   @ApiOperation({ summary: 'Withdraw money from an account' })
-  async withdraw(@Body() data: WithdrawDto) {
-    return this.transactionsService.withdraw(data.accountId, data.amount);
+  async withdraw(@CurrentUser() user, @Body() data: WithdrawDto) {
+    return this.transactionsService.withdraw(
+      user.sub,
+      data.accountId,
+      data.amount,
+    );
   }
 
   @Post('transfer')
   @ApiOperation({ summary: 'Transfer money between accounts' })
-  async transfer(@Body() data: TransferDto) {
+  async transfer(@CurrentUser() user, @Body() data: TransferDto) {
     return this.transactionsService.transfer(
+      user.sub,
       data.fromAccountId,
       data.toAccountId,
       data.amount,
@@ -38,11 +56,17 @@ export class TransactionsController {
   @Get('history/:accountId')
   @ApiOperation({ summary: 'Get transaction history for an account' })
   async getHistory(
+    @CurrentUser() user,
     @Param('accountId') accountId: string,
     @Query('type') type?: string,
   ) {
+    const numericAccountId = Number(accountId);
+    if (isNaN(numericAccountId)) {
+      throw new BadRequestException('Invalid account ID format');
+    }
     return this.transactionsService.getTransactionHistory(
-      Number(accountId),
+      user.sub,
+      numericAccountId,
       type,
     );
   }

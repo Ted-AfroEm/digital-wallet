@@ -3,11 +3,12 @@ import { AccountsService } from './accounts.service';
 import {
   ApiTags,
   ApiOperation,
-  ApiParam,
+  // ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { BadRequestException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { CurrentUser } from '../users/current-user.decorator';
 
 @ApiTags('Accounts')
 @ApiBearerAuth()
@@ -17,24 +18,32 @@ export class AccountsController {
 
   @Post()
   @ApiOperation({ summary: 'Create an account for a user' })
-  async create(@Body() data: CreateAccountDto) {
-    return this.accountsService.create(data);
+  async create(@CurrentUser() user, @Body() data: CreateAccountDto) {
+    return this.accountsService.create({
+      userId: user.sub,
+      initialBalance: data.initialBalance,
+    });
   }
 
-  @Get()
-  @ApiOperation({ summary: 'Fetch all accounts' })
-  async findAll() {
-    return this.accountsService.findAll();
+  @Get('my-accounts')
+  @ApiOperation({ summary: 'Get my accounts' })
+  async findAllByUser(@CurrentUser() user) {
+    return this.accountsService.findAllByUserId(user.sub);
+  }
+
+  @Get('all')
+  @ApiOperation({ summary: 'Fetch all accounts in the system' })
+  async findAllAccounts() {
+    return this.accountsService.findAllAccounts();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get account details by ID' })
-  @ApiParam({ name: 'id', type: 'number' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@CurrentUser() user, @Param('id') id: string) {
     const numericId = Number(id);
     if (isNaN(numericId)) {
       throw new BadRequestException('Invalid account ID format');
     }
-    return this.accountsService.findOne(numericId);
+    return this.accountsService.findOneByUserId(user.sub, numericId);
   }
 }
