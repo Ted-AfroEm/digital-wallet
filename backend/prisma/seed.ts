@@ -1,63 +1,94 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  // Create users with Ethiopian names
-  const user1 = await prisma.user.create({
-    data: {
-      username: 'abebe_kebede',
-      email: 'abebe.kebede@example.com',
-      password: 'securepassword1', // Note: Hash passwords in production
-    },
-  });
+async function seedDatabase() {
+  try {
+    console.log('Seeding database...');
 
-  const user2 = await prisma.user.create({
-    data: {
-      username: 'alemu_tadesse',
-      email: 'alemutadesse@example.com',
-      password: 'securepassword2',
-    },
-  });
+    // Clear existing data
+    await prisma.transaction.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.user.deleteMany();
+    console.log('Database cleaned.');
 
-  const user3 = await prisma.user.create({
-    data: {
-      username: 'desta_mebratu',
-      email: 'desta.mebratu@example.com',
-      password: 'securepassword3',
-    },
-  });
+    // Seed users
+    const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // Create accounts for each user
-  await prisma.account.create({
-    data: {
-      userId: user1.id,
-      balance: 1000.0,
-    },
-  });
+    const user1 = await prisma.user.create({
+      data: {
+        username: 'john_doe',
+        email: 'john@example.com',
+        password: hashedPassword,
+        createdAt: new Date(),
+      },
+    });
 
-  await prisma.account.create({
-    data: {
-      userId: user2.id,
-      balance: 2000.0,
-    },
-  });
+    const user2 = await prisma.user.create({
+      data: {
+        username: 'jane_smith',
+        email: 'jane@example.com',
+        password: hashedPassword,
+        createdAt: new Date(),
+      },
+    });
 
-  await prisma.account.create({
-    data: {
-      userId: user3.id,
-      balance: 1500.0,
-    },
-  });
+    console.log('Users seeded:', { user1, user2 });
 
-  console.log('Seed user with account created successfully!');
+    // Seed accounts
+    const account1 = await prisma.account.create({
+      data: {
+        userId: user1.id,
+        balance: 1000.0,
+      },
+    });
+
+    const account2 = await prisma.account.create({
+      data: {
+        userId: user2.id,
+        balance: 2000.0,
+      },
+    });
+
+    console.log('Accounts seeded:', { account1, account2 });
+
+    // Seed transactions
+    await prisma.transaction.createMany({
+      data: [
+        {
+          fromAccountId: account1.id,
+          toAccountId: account2.id,
+          type: 'TRANSFER',
+          amount: 200.0,
+          status: 'SUCCESS',
+          createdAt: new Date(),
+        },
+        {
+          toAccountId: account1.id,
+          type: 'DEPOSIT',
+          amount: 500.0,
+          status: 'SUCCESS',
+          createdAt: new Date(),
+        },
+        {
+          fromAccountId: account2.id,
+          type: 'WITHDRAW',
+          amount: 300.0,
+          status: 'SUCCESS',
+          createdAt: new Date(),
+        },
+      ],
+    });
+
+    console.log('Transactions seeded.');
+
+    console.log('Database seeded successfully!');
+  } catch (error) {
+    console.error('Error seeding database:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+seedDatabase();
