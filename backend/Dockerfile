@@ -20,4 +20,4 @@ RUN npx prisma generate
 EXPOSE 8081
 
 # Start the application and run migrations
-CMD ["sh", "-c", "npx prisma migrate dev --name init && npm run start:dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:dev"]
