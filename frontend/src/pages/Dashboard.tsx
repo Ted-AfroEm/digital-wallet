@@ -67,8 +67,6 @@ const Dashboard: React.FC = () => {
     }
   }, [user, navigate]);
 
-  if (!user || !currentAccount) return <p>Loading...</p>;
-
   const handleDeposit = async () => {
     if (depositAmount > 0) {
       await deposit(depositAmount);
@@ -89,7 +87,7 @@ const Dashboard: React.FC = () => {
 
   const handleTransfer = async () => {
     if (transferAmount > 0 && recipient) {
-      transfer(recipient, transferAmount, currentAccount.id);
+      transfer(recipient, transferAmount, currentAccount!.id);
       setRecipient("");
       setTransferAmount(0);
     } else {
@@ -144,10 +142,32 @@ const Dashboard: React.FC = () => {
     },
   ];
 
-  if (!user || !currentAccount) {
+  if (!user) {
     return <p>Loading...</p>;
   }
-
+  if (!currentAccount) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="p-6 bg-white rounded shadow-lg max-w-md">
+          <h2 className="text-2xl font-bold mb-4">Welcome, {user.username}!</h2>
+          <p className="mb-4">It looks like you don’t have any accounts yet.</p>
+          <input
+            type="number"
+            placeholder="Initial Balance"
+            value={initialBalance}
+            onChange={(e) => setInitialBalance(Number(e.target.value))}
+            className="p-2 border rounded w-full mb-4"
+          />
+          <button
+            onClick={handleAddAccount}
+            className="w-full p-2 bg-green-500 text-white rounded"
+          >
+            Create First Account
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex justify-center min-h-screen bg-gray-50 pt-10">
       <div className="w-full max-w-4xl p-6 bg-white rounded-lg shadow-lg">
@@ -201,7 +221,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 py-4">
           {/* Deposit Section */}
-          <div className="p-4 bg-gray-100 rounded shadow">
+          <div className="p-4 rounded shadow">
             <h2 className="text-xl font-bold mb-4">Deposit</h2>
             <input
               type="number"
@@ -219,7 +239,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Withdraw Section */}
-          <div className="p-4 bg-gray-100 rounded shadow">
+          <div className="p-4 rounded shadow">
             <h2 className="text-xl font-bold mb-4">Withdraw</h2>
             <input
               type="number"
@@ -237,7 +257,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Transfer Section */}
-          <div className="p-4 bg-gray-100 rounded shadow md:col-span-2 ">
+          <div className="p-4 rounded shadow md:col-span-2 ">
             <h2 className="text-xl font-bold mb-4">Transfer</h2>
             <div className="flex flex-col lg:flex-row gap-4">
               <select
@@ -275,7 +295,7 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="p-4 bg-gray-100 rounded shadow mt-6">
+        <div className="mt-6">
           <h2 className="text-xl font-bold mb-4">Transaction History</h2>
           <DataTable
             columns={columns}
