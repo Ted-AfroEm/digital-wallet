@@ -83,7 +83,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         accounts: userData.accounts,
       });
 
-      setCurrentAccount(userData.accounts?.[0] || null);
+      if (userData.accounts && userData.accounts.length > 0) {
+        setCurrentAccount(userData.accounts[0]);
+      } else {
+        setCurrentAccount(null);
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Login failed");
