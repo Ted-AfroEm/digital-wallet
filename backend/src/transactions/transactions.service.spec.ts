@@ -19,6 +19,7 @@ describe('TransactionsService', () => {
               update: jest.fn(),
             },
             transaction: {
+              findMany: jest.fn(),
               create: jest.fn(),
             },
             $transaction: jest.fn((callback) => callback(prisma)),
@@ -297,6 +298,130 @@ describe('TransactionsService', () => {
       await expect(service.transfer(1, 1, 2, 500)).rejects.toThrow(
         new BadRequestException('Insufficient funds in source account'),
       );
+    });
+  });
+
+  describe('TransactionsService - getTransactionHistory', () => {
+    it('should fetch transaction history for a valid account', async () => {
+      // Mock account lookup
+      jest.spyOn(prisma.account, 'findUnique').mockResolvedValueOnce({
+        id: 1,
+        userId: 1,
+        balance: 1000,
+      });
+
+      // Mock transaction history
+      jest.spyOn(prisma.transaction, 'findMany').mockResolvedValueOnce([
+        {
+          id: 1,
+          fromAccountId: null,
+          toAccountId: 1,
+          type: 'DEPOSIT',
+          amount: 500,
+          status: 'SUCCESS',
+          createdAt: new Date(),
+        },
+        {
+          id: 2,
+          fromAccountId: 1,
+          toAccountId: 2,
+          type: 'TRANSFER',
+          amount: 200,
+          status: 'SUCCESS',
+          createdAt: new Date(),
+        },
+      ]);
+
+      const result = await service.getTransactionHistory(1, 1);
+
+      expect(result).toEqual([
+        {
+          id: 1,
+          fromAccountId: null,
+          toAccountId: 1,
+          type: 'DEPOSIT',
+          amount: 500,
+          status: 'SUCCESS',
+          createdAt: expect.any(Date),
+        },
+        {
+          id: 2,
+          fromAccountId: 1,
+          toAccountId: 2,
+          type: 'TRANSFER',
+          amount: 200,
+          status: 'SUCCESS',
+          createdAt: expect.any(Date),
+        },
+      ]);
+      expect(prisma.account.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(prisma.transaction.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [{ fromAccountId: 1 }, { toAccountId: 1 }],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should throw an error if account does not belong to the user', async () => {
+      // Mock account lookup
+      jest.spyOn(prisma.account, 'findUnique').mockResolvedValueOnce({
+        id: 1,
+        userId: 2, // Account belongs to another user
+        balance: 1000,
+      });
+
+      await expect(service.getTransactionHistory(1, 1)).rejects.toThrow(
+        new BadRequestException('Access denied or account not found'),
+      );
+    });
+
+    it('should filter transaction history by type', async () => {
+      // Mock account lookup
+      jest.spyOn(prisma.account, 'findUnique').mockResolvedValueOnce({
+        id: 1,
+        userId: 1,
+        balance: 1000,
+      });
+
+      // Mock transaction history
+      jest.spyOn(prisma.transaction, 'findMany').mockResolvedValueOnce([
+        {
+          id: 2,
+          fromAccountId: 1,
+          toAccountId: 2,
+          type: 'TRANSFER',
+          amount: 200,
+          status: 'SUCCESS',
+          createdAt: new Date(),
+        },
+      ]);
+
+      const result = await service.getTransactionHistory(1, 1, 'TRANSFER');
+
+      expect(result).toEqual([
+        {
+          id: 2,
+          fromAccountId: 1,
+          toAccountId: 2,
+          type: 'TRANSFER',
+          amount: 200,
+          status: 'SUCCESS',
+          createdAt: expect.any(Date),
+        },
+      ]);
+      expect(prisma.account.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(prisma.transaction.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [{ fromAccountId: 1 }, { toAccountId: 1 }],
+          type: 'TRANSFER',
+        },
+        orderBy: { createdAt: 'desc' },
+      });
     });
   });
 });
