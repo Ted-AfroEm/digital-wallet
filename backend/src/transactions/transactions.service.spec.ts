@@ -195,4 +195,108 @@ describe('TransactionsService', () => {
       );
     });
   });
+
+  describe('TransactionsService - transfer', () => {
+    it('should successfully transfer money between accounts', async () => {
+      // Mock source account lookup
+      jest
+        .spyOn(prisma.account, 'findUnique')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 1000 }) // Source account
+        .mockResolvedValueOnce({ id: 2, userId: 2, balance: 500 }); // Destination account
+
+      // Mock source account update
+      jest
+        .spyOn(prisma.account, 'update')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 500 }) // Updated source account
+        .mockResolvedValueOnce({ id: 2, userId: 2, balance: 1000 }); // Updated destination account
+
+      // Mock transaction creation
+      jest.spyOn(prisma.transaction, 'create').mockResolvedValueOnce({
+        id: 1,
+        fromAccountId: 1,
+        toAccountId: 2,
+        type: 'TRANSFER',
+        amount: 500,
+        status: 'SUCCESS',
+        createdAt: new Date(),
+      });
+
+      const result = await service.transfer(1, 1, 2, 500);
+
+      expect(result).toEqual({
+        id: 1,
+        fromAccountId: 1,
+        toAccountId: 2,
+        type: 'TRANSFER',
+        amount: 500,
+        status: 'SUCCESS',
+        createdAt: expect.any(Date),
+      });
+      expect(prisma.account.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { balance: { decrement: 500 } },
+      });
+      expect(prisma.account.update).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: { balance: { increment: 500 } },
+      });
+      expect(prisma.transaction.create).toHaveBeenCalledWith({
+        data: {
+          fromAccountId: 1,
+          toAccountId: 2,
+          type: 'TRANSFER',
+          amount: 500,
+          status: 'SUCCESS',
+        },
+      });
+    });
+
+    it('should throw an error if transfer amount is less than or equal to zero', async () => {
+      await expect(service.transfer(1, 1, 2, 0)).rejects.toThrow(
+        new BadRequestException('Transfer amount must be greater than zero'),
+      );
+    });
+
+    it('should throw an error if source account does not belong to the user', async () => {
+      jest
+        .spyOn(prisma.account, 'findUnique')
+        .mockResolvedValueOnce({ id: 1, userId: 2, balance: 1000 }); // Source account belongs to another user
+
+      await expect(service.transfer(1, 1, 2, 500)).rejects.toThrow(
+        new BadRequestException('Invalid or unauthorized source account'),
+      );
+    });
+
+    it('should throw an error if destination account does not exist', async () => {
+      jest
+        .spyOn(prisma.account, 'findUnique')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 1000 }) // Source account
+        .mockResolvedValueOnce(null); // Destination account does not exist
+
+      await expect(service.transfer(1, 1, 2, 500)).rejects.toThrow(
+        new BadRequestException('Invalid destination account'),
+      );
+    });
+
+    it('should throw an error if transferring to the same account', async () => {
+      jest
+        .spyOn(prisma.account, 'findUnique')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 1000 }); // Source account
+
+      await expect(service.transfer(1, 1, 1, 500)).rejects.toThrow(
+        new BadRequestException('Cannot transfer to the same account'),
+      );
+    });
+
+    it('should throw an error if source account has insufficient funds', async () => {
+      jest
+        .spyOn(prisma.account, 'findUnique')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 400 }) // Source account with insufficient funds
+        .mockResolvedValueOnce({ id: 2, userId: 2, balance: 500 }); // Destination account
+
+      await expect(service.transfer(1, 1, 2, 500)).rejects.toThrow(
+        new BadRequestException('Insufficient funds in source account'),
+      );
+    });
+  });
 });
