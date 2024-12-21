@@ -152,8 +152,6 @@ CMD ["nginx", "-g", "daemon off;"]
 ### Docker-Compose File
 
 ```yaml
-version: "3.9"
-
 services:
   backend:
     build:
