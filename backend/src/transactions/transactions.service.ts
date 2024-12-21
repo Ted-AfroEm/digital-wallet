@@ -25,6 +25,7 @@ export class TransactionsService {
 
       return prisma.transaction.create({
         data: {
+          fromAccountId: null,
           toAccountId: accountId,
           type: 'DEPOSIT',
           amount,

@@ -54,7 +54,7 @@ describe('TransactionsService', () => {
       // Mock transaction creation
       jest.spyOn(prisma.transaction, 'create').mockResolvedValueOnce({
         id: 1,
-        fromAccountId: null,
+        fromAccountId: null, // Explicitly set to null for deposit
         toAccountId: 1,
         type: 'DEPOSIT',
         amount: 500,
@@ -66,6 +66,7 @@ describe('TransactionsService', () => {
 
       expect(result).toEqual({
         id: 1,
+        fromAccountId: null, // Ensure this matches the mock response
         toAccountId: 1,
         type: 'DEPOSIT',
         amount: 500,
@@ -78,6 +79,7 @@ describe('TransactionsService', () => {
       });
       expect(prisma.transaction.create).toHaveBeenCalledWith({
         data: {
+          fromAccountId: null, // Ensure this matches the actual method behavior
           toAccountId: 1,
           type: 'DEPOSIT',
           amount: 500,
