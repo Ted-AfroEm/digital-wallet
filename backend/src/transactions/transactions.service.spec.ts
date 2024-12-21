@@ -301,6 +301,84 @@ describe('TransactionsService', () => {
     });
   });
 
+  describe('TransactionsService - transfer (double spending)', () => {
+    it('should successfully deduct and credit the correct amounts atomically', async () => {
+      // Mock source and destination account lookups
+      jest
+        .spyOn(prisma.account, 'findUnique')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 1000 }) // Source account
+        .mockResolvedValueOnce({ id: 2, userId: 2, balance: 500 }); // Destination account
+
+      // Mock account updates
+      jest
+        .spyOn(prisma.account, 'update')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 500 }) // Updated source account
+        .mockResolvedValueOnce({ id: 2, userId: 2, balance: 1000 }); // Updated destination account
+
+      // Mock transaction creation
+      jest.spyOn(prisma.transaction, 'create').mockResolvedValueOnce({
+        id: 1,
+        fromAccountId: 1,
+        toAccountId: 2,
+        type: 'TRANSFER',
+        amount: 500,
+        status: 'SUCCESS',
+        createdAt: new Date(),
+      });
+
+      const result = await service.transfer(1, 1, 2, 500);
+
+      expect(result).toEqual({
+        id: 1,
+        fromAccountId: 1,
+        toAccountId: 2,
+        type: 'TRANSFER',
+        amount: 500,
+        status: 'SUCCESS',
+        createdAt: expect.any(Date),
+      });
+
+      // Ensure the source account was decremented
+      expect(prisma.account.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { balance: { decrement: 500 } },
+      });
+
+      // Ensure the destination account was incremented
+      expect(prisma.account.update).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: { balance: { increment: 500 } },
+      });
+
+      // Ensure the transaction was created
+      expect(prisma.transaction.create).toHaveBeenCalledWith({
+        data: {
+          fromAccountId: 1,
+          toAccountId: 2,
+          type: 'TRANSFER',
+          amount: 500,
+          status: 'SUCCESS',
+        },
+      });
+    });
+
+    it('should fail the transaction if insufficient funds are detected during the operation', async () => {
+      // Mock source and destination account lookups
+      jest
+        .spyOn(prisma.account, 'findUnique')
+        .mockResolvedValueOnce({ id: 1, userId: 1, balance: 400 }) // Insufficient funds in source account
+        .mockResolvedValueOnce({ id: 2, userId: 2, balance: 500 }); // Destination account
+
+      await expect(service.transfer(1, 1, 2, 500)).rejects.toThrow(
+        new BadRequestException('Insufficient funds in source account'),
+      );
+
+      // Ensure no updates or transactions were performed
+      expect(prisma.account.update).not.toHaveBeenCalled();
+      expect(prisma.transaction.create).not.toHaveBeenCalled();
+    });
+  });
+
   describe('TransactionsService - getTransactionHistory', () => {
     it('should fetch transaction history for a valid account', async () => {
       // Mock account lookup
