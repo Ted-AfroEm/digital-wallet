@@ -16,6 +16,11 @@ export class AuthService {
   ): Promise<{ access_token: string }> {
     const user = await this.usersService.findOne(username);
 
+    // Handle case where user is not found
+    if (!user) {
+      throw new UnauthorizedException('Invalid username or password');
+    }
+
     const isPasswordMatch = await bcrypt.compare(pass, user.password);
     if (!isPasswordMatch) {
       throw new UnauthorizedException('Invalid username or password');
