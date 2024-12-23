@@ -62,24 +62,28 @@ const TransactionActions: React.FC = () => {
       <div className="p-6 bg-gray-100 rounded-lg shadow-md">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Deposit</h2>
         <form onSubmit={depositFormik.handleSubmit} className="space-y-4">
-          <input
-            type="number"
-            name="amount"
-            placeholder="Enter deposit amount"
-            value={depositFormik.values.amount}
-            onChange={depositFormik.handleChange}
-            onBlur={depositFormik.handleBlur}
-            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
-              depositFormik.touched.amount && depositFormik.errors.amount
-                ? "border-red-500"
-                : "focus:ring-blue-400"
-            }`}
-          />
-          {depositFormik.touched.amount && depositFormik.errors.amount && (
-            <p className="text-red-500 text-sm">
-              {depositFormik.errors.amount}
-            </p>
-          )}
+          <div className="flex flex-col">
+            <input
+              type="number"
+              name="amount"
+              placeholder="Enter deposit amount"
+              value={depositFormik.values.amount}
+              onChange={depositFormik.handleChange}
+              onBlur={depositFormik.handleBlur}
+              className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                depositFormik.touched.amount && depositFormik.errors.amount
+                  ? "border-red-500"
+                  : "focus:ring-blue-400"
+              }`}
+            />
+            <div className="h-5">
+              {depositFormik.touched.amount && depositFormik.errors.amount && (
+                <p className="text-red-500 text-sm">
+                  {depositFormik.errors.amount}
+                </p>
+              )}
+            </div>
+          </div>
           <button
             type="submit"
             className="w-full p-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition"
@@ -93,24 +97,29 @@ const TransactionActions: React.FC = () => {
       <div className="p-6 bg-gray-100 rounded-lg shadow-md">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Withdraw</h2>
         <form onSubmit={withdrawFormik.handleSubmit} className="space-y-4">
-          <input
-            type="number"
-            name="amount"
-            placeholder="Enter withdrawal amount"
-            value={withdrawFormik.values.amount}
-            onChange={withdrawFormik.handleChange}
-            onBlur={withdrawFormik.handleBlur}
-            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
-              withdrawFormik.touched.amount && withdrawFormik.errors.amount
-                ? "border-red-500"
-                : "focus:ring-blue-400"
-            }`}
-          />
-          {withdrawFormik.touched.amount && withdrawFormik.errors.amount && (
-            <p className="text-red-500 text-sm">
-              {withdrawFormik.errors.amount}
-            </p>
-          )}
+          <div className="flex flex-col">
+            <input
+              type="number"
+              name="amount"
+              placeholder="Enter withdrawal amount"
+              value={withdrawFormik.values.amount}
+              onChange={withdrawFormik.handleChange}
+              onBlur={withdrawFormik.handleBlur}
+              className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                withdrawFormik.touched.amount && withdrawFormik.errors.amount
+                  ? "border-red-500"
+                  : "focus:ring-blue-400"
+              }`}
+            />
+            <div className="h-5">
+              {withdrawFormik.touched.amount &&
+                withdrawFormik.errors.amount && (
+                  <p className="text-red-500 text-sm">
+                    {withdrawFormik.errors.amount}
+                  </p>
+                )}
+            </div>
+          </div>
           <button
             type="submit"
             className="w-full p-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition"
@@ -149,12 +158,14 @@ const TransactionActions: React.FC = () => {
                     </option>
                   ))}
               </select>
-              {transferFormik.touched.recipient &&
-                transferFormik.errors.recipient && (
-                  <p className="text-red-500 text-sm">
-                    {transferFormik.errors.recipient}
-                  </p>
-                )}
+              <div className="h-5">
+                {transferFormik.touched.recipient &&
+                  transferFormik.errors.recipient && (
+                    <p className="text-red-500 text-sm">
+                      {transferFormik.errors.recipient}
+                    </p>
+                  )}
+              </div>
             </div>
             <div className="flex flex-col">
               <input
@@ -170,12 +181,14 @@ const TransactionActions: React.FC = () => {
                     : "focus:ring-blue-400"
                 }`}
               />
-              {transferFormik.touched.amount &&
-                transferFormik.errors.amount && (
-                  <p className="text-red-500 text-sm">
-                    {transferFormik.errors.amount}
-                  </p>
-                )}
+              <div className="h-5">
+                {transferFormik.touched.amount &&
+                  transferFormik.errors.amount && (
+                    <p className="text-red-500 text-sm">
+                      {transferFormik.errors.amount}
+                    </p>
+                  )}
+              </div>
             </div>
           </div>
           <button
