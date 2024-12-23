@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, {
   createContext,
   useState,
@@ -5,8 +6,8 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import api from "../api/axios"; // Adjust path if necessary
 import { toast } from "react-toastify";
+import { apiService } from "../services/apiService";
 
 interface Account {
   id: string;
@@ -20,6 +21,15 @@ interface User {
   accounts: Account[];
 }
 
+interface AccountDetails {
+  id: number;
+  userId: number;
+  balance: number;
+  user: {
+    username: string;
+  };
+}
+
 interface Transaction {
   id: number;
   fromAccountId: number;
@@ -29,18 +39,20 @@ interface Transaction {
   status: "SUCCESS" | "FAILURE";
   createdAt: string;
 }
+
 interface AuthContextProps {
   user: User | null;
   currentAccount: Account | null;
+  allAccounts: AccountDetails[];
   switchAccount: (accountId: string) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   deposit: (amount: number) => Promise<void>;
   withdraw: (amount: number) => void;
   transfer: (
-    recipientId: string,
+    recipientId: number,
     amount: number,
-    senderAccountId: string
+    senderAccountId: number
   ) => void;
   addAccount: (initialBalance: number) => Promise<void>;
   transactions: Transaction[];
@@ -54,28 +66,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allAccounts, setAllAccounts] = useState<AccountDetails[]>([]);
 
   const login = async (username: string, password: string) => {
     try {
-      const loginResponse = await api.post("/auth/login", {
-        username,
-        password,
-      });
-      const { access_token } = loginResponse.data;
-
+      const { access_token } = await apiService.login(username, password);
       localStorage.setItem("token", access_token);
 
-      const userResponse = await api.post(
-        "/users/me",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      );
-
-      const userData = userResponse.data;
+      const userData = await apiService.fetchUserData(access_token);
       setUser({
         id: userData.id,
         username: userData.username,
@@ -83,14 +81,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         accounts: userData.accounts,
       });
 
-      if (userData.accounts && userData.accounts.length > 0) {
+      if (userData.accounts?.length > 0) {
         setCurrentAccount(userData.accounts[0]);
-      } else {
-        setCurrentAccount(null);
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+      const accounts = await apiService.fetchAllAccounts(access_token);
+      setAllAccounts(accounts);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Login failed");
+      throw new Error(
+        (error.response?.data?.message as string) || "Login failed"
+      );
     }
   };
 
@@ -98,39 +98,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.removeItem("token");
     setUser(null);
     setCurrentAccount(null);
+    setAllAccounts([]);
   };
 
   const switchAccount = (accountId: string) => {
     if (user) {
       const account = user.accounts.find((acc) => acc.id === accountId);
-      if (account) {
-        setCurrentAccount(account);
-      }
+      if (account) setCurrentAccount(account);
     }
   };
 
   const addAccount = async (initialBalance: number) => {
     try {
-      const response = await api.post(
-        "/accounts",
-        { initialBalance },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      const newAccount = response.data;
+      const token = localStorage.getItem("token")!;
+      const newAccount = await apiService.createAccount(token, initialBalance);
 
       if (user) {
         const updatedAccounts = [...user.accounts, newAccount];
         setUser({ ...user, accounts: updatedAccounts });
         setCurrentAccount(newAccount);
       }
-
+      const accounts = await apiService.fetchAllAccounts(token);
+      setAllAccounts(accounts);
       toast.success("Account added successfully!");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to add account.");
     }
@@ -143,38 +133,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
 
     try {
-      const response = await api.post(
-        `/transactions/deposit`,
-        { amount, accountId: currentAccount.id },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+      const token = localStorage.getItem("token")!;
+      const depositData = await apiService.deposit(
+        token,
+        currentAccount.id,
+        amount
       );
 
-      if (response.status === 201) {
-        const newBalance = response.data.amount + currentAccount.balance;
+      const newBalance = depositData.amount + currentAccount.balance;
+      setCurrentAccount({ ...currentAccount, balance: newBalance });
 
-        if (currentAccount) {
-          setCurrentAccount({
-            ...currentAccount,
-            balance: newBalance,
-          });
-        }
-
-        // Update the user accounts in the context
-        if (user) {
-          const updatedAccounts = user.accounts.map((acc) =>
-            acc.id === currentAccount.id ? { ...acc, balance: newBalance } : acc
-          );
-          setUser({ ...user, accounts: updatedAccounts });
-        }
-
-        toast.success("Deposit successful!");
-        fetchTransactions(currentAccount.id);
+      if (user) {
+        const updatedAccounts = user.accounts.map((acc) =>
+          acc.id === currentAccount.id ? { ...acc, balance: newBalance } : acc
+        );
+        setUser({ ...user, accounts: updatedAccounts });
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+      toast.success("Deposit successful!");
+      fetchTransactions(currentAccount.id);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Deposit failed.");
     }
@@ -183,85 +160,61 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const withdraw = async (amount: number) => {
     try {
       if (currentAccount && currentAccount.balance >= amount) {
-        const response = await api.post(
-          `/transactions/withdraw`,
-          { amount, accountId: currentAccount.id },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
+        const token = localStorage.getItem("token")!;
+        const response = await apiService.withdraw(
+          token,
+          currentAccount.id,
+          amount
         );
 
-        if (response.status === 201) {
-          const newBalance = currentAccount.balance - response.data.amount;
+        const newBalance = currentAccount.balance - response.amount;
+        setCurrentAccount({ ...currentAccount, balance: newBalance });
 
-          if (currentAccount) {
-            setCurrentAccount({
-              ...currentAccount,
-              balance: newBalance,
-            });
-          }
-          if (user) {
-            const updatedAccounts = user.accounts.map((acc) =>
-              acc.id === currentAccount.id
-                ? { ...acc, balance: newBalance }
-                : acc
-            );
-            setUser({ ...user, accounts: updatedAccounts });
-          }
-
-          toast.success("Withdrawal successful!");
-          fetchTransactions(currentAccount.id);
-        } else {
-          console.log(response.data);
-          toast.error(response?.data?.message || "Withdrawal failed.");
+        if (user) {
+          const updatedAccounts = user.accounts.map((acc) =>
+            acc.id === currentAccount.id ? { ...acc, balance: newBalance } : acc
+          );
+          setUser({ ...user, accounts: updatedAccounts });
         }
+
+        toast.success("Withdrawal successful!");
+        fetchTransactions(currentAccount.id);
       } else {
         toast.error("Insufficient balance.");
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Withdrawal failed.");
     }
   };
 
   const transfer = async (
-    recipientId: string,
+    recipientId: number,
     amount: number,
-    senderAccountId: string
+    senderAccountId: number
   ) => {
     if (currentAccount && currentAccount.balance >= amount) {
       try {
-        const response = await api.post(
-          "/transactions/transfer",
-          {
-            fromAccountId: senderAccountId,
-            toAccountId: Number(recipientId),
-            amount: amount,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+        const token = localStorage.getItem("token")!;
+        await apiService.transfer(token, senderAccountId, recipientId, amount);
 
-        if (response.status === 201) {
-          const newBalance = currentAccount.balance - amount;
-          setCurrentAccount({ ...currentAccount, balance: newBalance });
-          if (user) {
-            const updatedAccounts = user.accounts.map((acc) =>
-              acc.id === currentAccount.id
-                ? { ...acc, balance: newBalance }
-                : acc
-            );
-            setUser({ ...user, accounts: updatedAccounts });
-          }
-          toast.success("Transfer successful!");
-          fetchTransactions(currentAccount.id);
+        const newSenderBalance = currentAccount.balance - amount;
+
+        setCurrentAccount({ ...currentAccount, balance: newSenderBalance });
+
+        if (user) {
+          const updatedAccounts = user.accounts.map((acc) => {
+            if (acc.id === currentAccount.id) {
+              return { ...acc, balance: newSenderBalance };
+            } else if (Number(acc.id) === recipientId) {
+              return { ...acc, balance: acc.balance + amount };
+            }
+            return acc;
+          });
+
+          setUser({ ...user, accounts: updatedAccounts });
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        toast.success("Transfer successful!");
+        fetchTransactions(currentAccount.id);
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Transfer failed.");
       }
@@ -272,13 +225,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const fetchTransactions = async (accountId: string) => {
     try {
-      const response = await api.get(`/transactions/history/${accountId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setTransactions(response.data);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const token = localStorage.getItem("token")!;
+      const data = await apiService.fetchTransactions(token, accountId);
+      setTransactions(data);
     } catch (error: any) {
       toast.error(
         error.response?.data?.message || "Failed to fetch transactions."
@@ -287,9 +236,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   useEffect(() => {
-    if (currentAccount) {
-      fetchTransactions(currentAccount.id);
-    }
+    if (currentAccount) fetchTransactions(currentAccount.id);
   }, [currentAccount]);
 
   return (
@@ -297,6 +244,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         user,
         currentAccount,
+        allAccounts,
         switchAccount,
         login,
         logout,
