@@ -12,9 +12,9 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
 
   app.enableCors({
-    origin: 'http://localhost:5173', // Your frontend origin
+    origin: 'http://localhost:8080',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true, // If you're using cookies or authorization headers
+    credentials: true,
   });
 
   // Swagger setup
