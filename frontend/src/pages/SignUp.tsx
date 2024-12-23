@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../api/axios";
+import api from "../services/axios";
 
 const SignUp: React.FC = () => {
   const { login } = useAuth();

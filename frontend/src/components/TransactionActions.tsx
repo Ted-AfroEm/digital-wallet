@@ -30,7 +30,7 @@ const TransactionActions: React.FC = () => {
 
   const handleTransfer = () => {
     if (transferAmount > 0 && recipient) {
-      transfer(recipient, transferAmount, currentAccount!.id);
+      transfer(Number(recipient), transferAmount, Number(currentAccount!.id));
       setRecipient("");
       setTransferAmount(0);
     } else {
