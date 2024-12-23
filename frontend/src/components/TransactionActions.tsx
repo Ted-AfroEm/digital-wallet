@@ -124,53 +124,60 @@ const TransactionActions: React.FC = () => {
       <div className="p-6 bg-gray-100 rounded-lg shadow-md lg:col-span-2">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Transfer</h2>
         <form onSubmit={transferFormik.handleSubmit} className="space-y-4">
-          <select
-            name="recipient"
-            value={transferFormik.values.recipient}
-            onChange={transferFormik.handleChange}
-            onBlur={transferFormik.handleBlur}
-            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
-              transferFormik.touched.recipient &&
-              transferFormik.errors.recipient
-                ? "border-red-500"
-                : "focus:ring-blue-400"
-            }`}
-          >
-            <option value="" disabled>
-              Select Recipient
-            </option>
-            {allAccounts
-              .filter((account) => account.id !== Number(currentAccount.id))
-              .map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.user.username} - Account #{account.id}
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col">
+              <select
+                name="recipient"
+                value={transferFormik.values.recipient}
+                onChange={transferFormik.handleChange}
+                onBlur={transferFormik.handleBlur}
+                className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                  transferFormik.touched.recipient &&
+                  transferFormik.errors.recipient
+                    ? "border-red-500"
+                    : "focus:ring-blue-400"
+                }`}
+              >
+                <option value="" disabled>
+                  Select Recipient
                 </option>
-              ))}
-          </select>
-          {transferFormik.touched.recipient &&
-            transferFormik.errors.recipient && (
-              <p className="text-red-500 text-sm">
-                {transferFormik.errors.recipient}
-              </p>
-            )}
-          <input
-            type="number"
-            name="amount"
-            placeholder="Amount"
-            value={transferFormik.values.amount}
-            onChange={transferFormik.handleChange}
-            onBlur={transferFormik.handleBlur}
-            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
-              transferFormik.touched.amount && transferFormik.errors.amount
-                ? "border-red-500"
-                : "focus:ring-blue-400"
-            }`}
-          />
-          {transferFormik.touched.amount && transferFormik.errors.amount && (
-            <p className="text-red-500 text-sm">
-              {transferFormik.errors.amount}
-            </p>
-          )}
+                {allAccounts
+                  .filter((account) => account.id !== Number(currentAccount.id))
+                  .map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.user.username} - Account #{account.id}
+                    </option>
+                  ))}
+              </select>
+              {transferFormik.touched.recipient &&
+                transferFormik.errors.recipient && (
+                  <p className="text-red-500 text-sm">
+                    {transferFormik.errors.recipient}
+                  </p>
+                )}
+            </div>
+            <div className="flex flex-col">
+              <input
+                type="number"
+                name="amount"
+                placeholder="Amount"
+                value={transferFormik.values.amount}
+                onChange={transferFormik.handleChange}
+                onBlur={transferFormik.handleBlur}
+                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                  transferFormik.touched.amount && transferFormik.errors.amount
+                    ? "border-red-500"
+                    : "focus:ring-blue-400"
+                }`}
+              />
+              {transferFormik.touched.amount &&
+                transferFormik.errors.amount && (
+                  <p className="text-red-500 text-sm">
+                    {transferFormik.errors.amount}
+                  </p>
+                )}
+            </div>
+          </div>
           <button
             type="submit"
             className="w-full p-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition"
