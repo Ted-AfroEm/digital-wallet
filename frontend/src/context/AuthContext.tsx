@@ -20,6 +20,15 @@ interface User {
   accounts: Account[];
 }
 
+interface AccountDetails {
+  id: number;
+  userId: number;
+  balance: number;
+  user: {
+    username: string;
+  };
+}
+
 interface Transaction {
   id: number;
   fromAccountId: number;
@@ -32,6 +41,7 @@ interface Transaction {
 interface AuthContextProps {
   user: User | null;
   currentAccount: Account | null;
+  allAccounts: AccountDetails[];
   switchAccount: (accountId: string) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -54,6 +64,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allAccounts, setAllAccounts] = useState<AccountDetails[]>([]);
 
   const login = async (username: string, password: string) => {
     try {
@@ -88,6 +99,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       } else {
         setCurrentAccount(null);
       }
+
+      await fetchAllAccounts();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Login failed");
@@ -98,6 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.removeItem("token");
     setUser(null);
     setCurrentAccount(null);
+    setAllAccounts([]);
   };
 
   const switchAccount = (accountId: string) => {
@@ -286,6 +300,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const fetchAllAccounts = async () => {
+    try {
+      const response = await api.get("/accounts/all", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setAllAccounts(response.data);
+    } catch {
+      toast.error("Failed to fetch accounts.");
+    }
+  };
+
   useEffect(() => {
     if (currentAccount) {
       fetchTransactions(currentAccount.id);
@@ -297,6 +324,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         user,
         currentAccount,
+        allAccounts,
         switchAccount,
         login,
         logout,

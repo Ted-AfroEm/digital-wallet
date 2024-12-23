@@ -3,8 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { toast } from "react-toastify";
-import api from "../api/axios";
 import AccountSelection from "../components/AccountSelection";
+import TransactionActions from "../components/TransactionActions";
 
 interface Transaction {
   id: number;
@@ -15,84 +15,18 @@ interface Transaction {
   status: "SUCCESS" | "FAILURE";
   createdAt: string;
 }
-interface AccountDetails {
-  id: number;
-  userId: number;
-  balance: number;
-  user: {
-    username: string;
-  };
-}
 
 const Dashboard: React.FC = () => {
-  const {
-    user,
-    currentAccount,
-    deposit,
-    withdraw,
-    transfer,
-    addAccount,
-    transactions,
-    logout,
-  } = useAuth();
+  const { user, currentAccount, addAccount, transactions, logout } = useAuth();
   const navigate = useNavigate();
-  const [depositAmount, setDepositAmount] = useState(0);
-  const [withdrawAmount, setWithdrawAmount] = useState(0);
-  const [recipient, setRecipient] = useState("");
-  const [transferAmount, setTransferAmount] = useState(0);
-  const [allAccounts, setAllAccounts] = useState<AccountDetails[]>([]);
 
   const [initialBalance, setInitialBalance] = useState<number | "">("");
-
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const response = await api.get("/accounts/all", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        setAllAccounts(response.data);
-      } catch {
-        toast.error("Failed to fetch accounts.");
-      }
-    };
-    fetchAccounts();
-  }, [user]);
 
   useEffect(() => {
     if (!user) {
       navigate("/");
     }
   }, [user, navigate]);
-
-  const handleDeposit = async () => {
-    if (depositAmount > 0) {
-      await deposit(depositAmount);
-      setDepositAmount(0);
-    } else {
-      toast.error("Enter a valid deposit amount.");
-    }
-  };
-
-  const handleWithdrawal = () => {
-    if (withdrawAmount > 0) {
-      withdraw(withdrawAmount);
-      setWithdrawAmount(0);
-    } else {
-      toast.error("Enter a valid withdrawal amount.");
-    }
-  };
-
-  const handleTransfer = async () => {
-    if (transferAmount > 0 && recipient) {
-      transfer(recipient, transferAmount, currentAccount!.id);
-      setRecipient("");
-      setTransferAmount(0);
-    } else {
-      toast.error("Enter valid transfer details.");
-    }
-  };
 
   const handleAddAccount = async () => {
     if (typeof initialBalance === "number" && initialBalance > 0) {
@@ -187,6 +121,7 @@ const Dashboard: React.FC = () => {
         </header>
 
         <AccountSelection />
+
         <div className="p-6 bg-gray-100 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">
             Current Account Balance
@@ -195,82 +130,9 @@ const Dashboard: React.FC = () => {
             ${currentAccount.balance.toFixed(2)}
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 py-6">
-          <div className="p-6 bg-gray-100 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4 text-gray-700">
-              Deposit
-            </h2>
-            <input
-              type="number"
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(Number(e.target.value))}
-              className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder="Enter deposit amount"
-            />
-            <button
-              onClick={handleDeposit}
-              className="w-full p-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition"
-            >
-              Deposit
-            </button>
-          </div>
-          <div className="p-6 bg-gray-100 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4 text-gray-700">
-              Withdraw
-            </h2>
-            <input
-              type="number"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(Number(e.target.value))}
-              className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder="Enter withdrawal amount"
-            />
-            <button
-              onClick={handleWithdrawal}
-              className="w-full p-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition"
-            >
-              Withdraw
-            </button>
-          </div>
-          <div className="p-6 bg-gray-100 rounded-lg shadow-md lg:col-span-2">
-            <h2 className="text-lg font-semibold mb-4 text-gray-700">
-              Transfer
-            </h2>
-            <div className="flex flex-col lg:flex-row gap-4">
-              <select
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                className="w-full lg:w-1/2 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                <option value="" disabled>
-                  Select Recipient
-                </option>
-                {allAccounts
-                  .filter(
-                    (account) => account.id !== Number(currentAccount?.id)
-                  )
-                  .map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.user.username} - Account #{account.id}
-                    </option>
-                  ))}
-              </select>
-              <input
-                type="number"
-                value={transferAmount}
-                onChange={(e) => setTransferAmount(Number(e.target.value))}
-                className="w-full lg:w-1/2 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="Amount"
-              />
-            </div>
-            <button
-              onClick={handleTransfer}
-              className="w-full mt-4 p-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition"
-            >
-              Transfer
-            </button>
-          </div>
-        </div>
+
+        <TransactionActions />
+
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">
             Transaction History
