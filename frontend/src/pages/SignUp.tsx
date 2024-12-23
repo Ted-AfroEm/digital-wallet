@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -7,42 +9,44 @@ import api from "../services/axios";
 const SignUp: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const formik = useFormik({
+    initialValues: {
+      username: "",
+      email: "",
+      password: "",
+    },
+    validationSchema: Yup.object({
+      username: Yup.string()
+        .min(3, "Username must be at least 3 characters")
+        .required("Username is required"),
+      email: Yup.string()
+        .email("Invalid email address")
+        .required("Email is required"),
+      password: Yup.string()
+        .min(6, "Password must be at least 6 characters")
+        .required("Password is required"),
+    }),
+    onSubmit: async (values, { setSubmitting }) => {
+      try {
+        // Call the registration endpoint
+        const response = await api.post("/users/register", values);
 
-    if (!username || !email || !password) {
-      toast.error("Please fill out all fields.");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      // Call the registration endpoint
-      const response = await api.post("/users/register", {
-        username,
-        email,
-        password,
-      });
-
-      if (response.status === 201) {
-        toast.success("Registration successful! Logging in...");
-        await login(username, password);
-        navigate("/dashboard");
-      } else {
-        throw new Error("Unexpected response status");
+        if (response.status === 201) {
+          toast.success("Registration successful! Logging in...");
+          await login(values.username, values.password);
+          navigate("/dashboard");
+        } else {
+          throw new Error("Unexpected response status");
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to register.");
+      } finally {
+        setSubmitting(false);
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to register.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
@@ -56,7 +60,7 @@ const SignUp: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSignUp} className="space-y-5">
+        <form onSubmit={formik.handleSubmit} className="space-y-5">
           <div>
             <label
               htmlFor="username"
@@ -68,10 +72,20 @@ const SignUp: React.FC = () => {
               id="username"
               type="text"
               placeholder="Choose a username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+              value={formik.values.username}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 ${
+                formik.touched.username && formik.errors.username
+                  ? "border-red-500"
+                  : "focus:ring-gray-300"
+              }`}
             />
+            {formik.touched.username && formik.errors.username && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.username}
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -84,10 +98,18 @@ const SignUp: React.FC = () => {
               id="email"
               type="email"
               placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 ${
+                formik.touched.email && formik.errors.email
+                  ? "border-red-500"
+                  : "focus:ring-gray-300"
+              }`}
             />
+            {formik.touched.email && formik.errors.email && (
+              <p className="text-red-500 text-sm mt-1">{formik.errors.email}</p>
+            )}
           </div>
           <div>
             <label
@@ -100,17 +122,27 @@ const SignUp: React.FC = () => {
               id="password"
               type="password"
               placeholder="Create a password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 ${
+                formik.touched.password && formik.errors.password
+                  ? "border-red-500"
+                  : "focus:ring-gray-300"
+              }`}
             />
+            {formik.touched.password && formik.errors.password && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.password}
+              </p>
+            )}
           </div>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={formik.isSubmitting}
             className="w-full py-3 bg-blue-500 text-white font-medium rounded-lg shadow-md hover:bg-blue-600 transition disabled:opacity-50"
           >
-            {isLoading ? "Registering..." : "Sign Up"}
+            {formik.isSubmitting ? "Registering..." : "Sign Up"}
           </button>
         </form>
 
