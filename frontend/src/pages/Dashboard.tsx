@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { toast } from "react-toastify";
 import api from "../api/axios";
+import AccountSelection from "../components/AccountSelection";
 
 interface Transaction {
   id: number;
@@ -27,7 +28,6 @@ const Dashboard: React.FC = () => {
   const {
     user,
     currentAccount,
-    switchAccount,
     deposit,
     withdraw,
     transfer,
@@ -185,43 +185,8 @@ const Dashboard: React.FC = () => {
             Logout
           </button>
         </header>
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-700">
-            Select Account
-          </h2>
-          <div className="flex flex-wrap gap-4 mt-4 justify-between">
-            <div className="flex items-center gap-3">
-              {user.accounts.map((account) => (
-                <button
-                  key={account.id}
-                  onClick={() => switchAccount(account.id)}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    account.id === currentAccount.id
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                  }`}
-                >
-                  Account #{account.id}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                placeholder="Initial Balance"
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                value={initialBalance}
-                onChange={(e) => setInitialBalance(Number(e.target.value))}
-              />
-              <button
-                onClick={handleAddAccount}
-                className="px-4 py-2 bg-blue-500 text-white font-medium rounded-lg shadow-md hover:bg-blue-600 transition"
-              >
-                + Add Account
-              </button>
-            </div>
-          </div>
-        </div>
+
+        <AccountSelection />
         <div className="p-6 bg-gray-100 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">
             Current Account Balance
