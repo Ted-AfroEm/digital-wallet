@@ -1,4 +1,4 @@
-# Backend Dockerfile
+# Use the official Node.js image
 FROM node:20
 
 # Set working directory
@@ -16,8 +16,8 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Expose the port from .env file
-EXPOSE 8081
+# Expose the port for the application and Prisma Studio
+EXPOSE 8081 5555
 
-# Start the application and run migrations
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:dev"]
+# Start the application and Prisma Studio in parallel
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:dev & npx prisma studio --port 5555"]

@@ -10,6 +10,7 @@ This is a full-stack digital wallet application that allows users to register, l
 - Transaction history.
 - Fully Dockerized setup for backend (NestJS) and frontend (Vite).
 - Swagger API documentation.
+- **Prisma Studio** for database management and visualization.
 
 ## Technologies Used
 
@@ -18,6 +19,7 @@ This is a full-stack digital wallet application that allows users to register, l
 - Database: PostgreSQL
 - Docker & Docker Compose
 - Swagger for API Documentation
+- Prisma for ORM and database management
 
 ## Setup Instructions
 
@@ -51,6 +53,18 @@ This is a full-stack digital wallet application that allows users to register, l
    - **Frontend**: [http://localhost:8080](http://localhost:8080)
    - **Backend API**: [http://localhost:8081/api](http://localhost:8081/api)
    - **Swagger Documentation**: [http://localhost:8081/api/docs](http://localhost:8081/api/docs)
+   - **Prisma Studio**: [http://localhost:5555](http://localhost:5555)
+
+### Prisma Studio
+
+**Prisma Studio** is included for database visualization and management during development. You can access it at [http://localhost:5555](http://localhost:5555).
+
+Prisma Studio allows you to:
+
+- View and manage your database tables and records.
+- Test and inspect database relationships (e.g., `User`, `Account`, `Transaction`).
+
+Note: **Prisma Studio should only be used in development environments** for security reasons.
 
 ## Environment Variables
 
@@ -110,11 +124,14 @@ RUN npm install
 # Copy the application code
 COPY . .
 
-# Expose the port from .env file
-EXPOSE 8081
+# Generate Prisma client
+RUN npx prisma generate
 
-# Start the application
-CMD ["npm", "run", "start:prod"]
+# Expose the port for the application and Prisma Studio
+EXPOSE 8081 5555
+
+# Start the application and Prisma Studio in parallel
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:dev & npx prisma studio --port 5555"]
 ```
 
 ### Frontend Dockerfile
@@ -187,25 +204,23 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  prisma-studio:
+    image: node:20
+    working_dir: /app
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "npm install && npx prisma generate && npx prisma studio --port 5555"
+    depends_on:
+      - db
+
 volumes:
   db_data:
 ```
 
-## Setup Environment Files
-
-Before starting the application, run the following script to generate the required `.env` files:
-
-```bash
-chmod +x setup_env.sh
-./setup_env.sh
-```
-
-This will create:
-
-- Backend `.env` file with database and authentication configurations.
-- Frontend `.env` file with the base API URL.
-
-Ensure Docker is installed and running before proceeding.
+---
 
 ## Contributing
 

@@ -39,5 +39,17 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  prisma-studio:
+    image: node:20
+    working_dir: /app
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "npm install && npx prisma generate && npx prisma studio --port 5555"
+    depends_on:
+      - db
+
 volumes:
   db_data:

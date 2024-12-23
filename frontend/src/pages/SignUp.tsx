@@ -45,48 +45,86 @@ const SignUp: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-6 bg-white rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
-        <form onSubmit={handleSignUp}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-2 mb-4 border rounded"
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 mb-4 border rounded"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-2 mb-4 border rounded"
-          />
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
+      <div className="p-10 bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-semibold text-gray-800 mb-2">
+            Create Your Digital Wallet Account
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Sign up to access your secure digital wallet.
+          </p>
+        </div>
+
+        <form onSubmit={handleSignUp} className="space-y-5">
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-gray-700 font-medium text-sm mb-2"
+            >
+              Username
+            </label>
+            <input
+              id="username"
+              type="text"
+              placeholder="Choose a username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-gray-700 font-medium text-sm mb-2"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-gray-700 font-medium text-sm mb-2"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              placeholder="Create a password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+            />
+          </div>
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full p-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            className="w-full py-3 bg-blue-500 text-white font-medium rounded-lg shadow-md hover:bg-blue-600 transition disabled:opacity-50"
           >
             {isLoading ? "Registering..." : "Sign Up"}
           </button>
         </form>
-        <p className="mt-4 text-sm text-center">
-          Already have an account?{" "}
-          <span
-            onClick={() => navigate("/")}
-            className="text-blue-500 hover:underline cursor-pointer"
-          >
-            Login here
-          </span>
-        </p>
+
+        <div className="mt-8 text-center">
+          <p className="text-gray-600">
+            Already have an account?{" "}
+            <span
+              onClick={() => navigate("/")}
+              className="text-blue-500 hover:underline cursor-pointer"
+            >
+              Log in here
+            </span>
+          </p>
+        </div>
       </div>
     </div>
   );
