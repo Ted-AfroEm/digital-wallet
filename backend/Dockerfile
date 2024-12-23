@@ -16,8 +16,8 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Expose the port for the application and Prisma Studio
-EXPOSE 8081 5555
+# Expose the application port
+EXPOSE 8081
 
-# Start the application and Prisma Studio in parallel
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:dev & npx prisma studio --port 5555"]
+# Run migrations (create if needed) and start the application
+CMD ["sh", "-c", "npx prisma migrate dev --name init && npm run start:dev"]

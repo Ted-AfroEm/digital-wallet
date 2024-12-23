@@ -1,5 +1,5 @@
 # Frontend Dockerfile
-FROM node:20
+FROM node:20 as build
 
 # Set working directory
 WORKDIR /app
@@ -16,12 +16,17 @@ COPY . .
 # Build the frontend
 RUN npm run build
 
-# Use a lightweight server for the built app
+# Stage 2: Serve with NGINX
 FROM nginx:alpine
-COPY --from=0 /app/dist /usr/share/nginx/html
 
-# Expose the default nginx port
-EXPOSE 8080
+# Copy built app to NGINX's HTML directory
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Start the server
+# Add a custom NGINX configuration to handle routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose the default NGINX port
+EXPOSE 80
+
+# Start NGINX
 CMD ["nginx", "-g", "daemon off;"]
