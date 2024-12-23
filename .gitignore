@@ -5,7 +5,7 @@
 /backend/.env
 
 # Prisma
-# /backend/prisma/migrations/
+/backend/prisma/migrations/
 
 # Frontend
 /frontend/node_modules
